@@ -20,5 +20,7 @@ Um die Geräteunterstützung zu aktivieren, wird die aktuellste Version des [JP-
 #### Verdrahtung
 ![wiring](Images/wiring.png)
 
+**Bei Verwendung des MaxSonar Sensors ist der PW-Pin an den SENSOR_ECHO_PIN anzuschließen. Der SENSOR_TRIG_PIN wird nicht verwendet.**
+
 #### CCU Geräteeinstellungen
 ![ccu_setting](Images/CCU_Einstellungen.png)
