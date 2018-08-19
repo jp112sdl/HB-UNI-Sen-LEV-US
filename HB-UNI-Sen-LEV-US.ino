@@ -164,8 +164,11 @@ class MeasureChannel : public Channel<Hal, UList1, EmptyList, List4, PEERS_PER_C
           digitalWrite(SENSOR_EN_PIN, LOW);
           break;
         case MAXSONAR:
+          digitalWrite(SENSOR_EN_PIN, HIGH);
+          _delay_ms(200);
           m_value = pulseIn(SENSOR_ECHO_PIN, HIGH);
-          m_value = m_value / 58; //(m_value / 147) * (254 / 100);
+          m_value = (m_value * 1000L / 57874L);
+          digitalWrite(SENSOR_EN_PIN, LOW);
           break;
         default:
           DPRINTLN(F("Invalid Sensor Type selected"));
