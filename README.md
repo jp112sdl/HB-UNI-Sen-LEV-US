@@ -19,3 +19,6 @@ Um die Geräteunterstützung zu aktivieren, wird die aktuellste Version des [JP-
 
 #### Verdrahtung
 ![wiring](Images/wiring.png)
+
+#### CCU Geräteeinstellungen
+![ccu_setting](Images/CCU_Einstellungen.png)
