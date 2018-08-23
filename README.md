@@ -33,3 +33,10 @@ _Der erste Prototyp_
 <img src=Images/halter2.jpg width=300></img>
 <img src=Images/halter3.jpg width=300></img>
 <img src=Images/halter1.jpg width=300></img>
+
+**Die Teile findet ihr bei Tinkercad:**
+<br/>
+[Stange für Höhe 20cm](https://www.tinkercad.com/things/iM7Yyc3prMh-ultraschallsensor-halterung-stange-20cm-hohe/editv2)<br/>
+[Stange für Höhe 15cm](https://www.tinkercad.com/things/7xHuCkIllsB-ultraschallsensor-halterung-stange-15cm/editv2)<br/>
+[Ringe](https://www.tinkercad.com/things/15f2ttggOnX-ultraschallsensor-halterung/editv2)<br/>
+[Deckel](https://www.tinkercad.com/things/2bYtNM8HQ3f-ultraschallsensor-halterung-deckel/editv2)
