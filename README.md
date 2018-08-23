@@ -3,6 +3,9 @@
 
 Um die Geräteunterstützung zu aktivieren, wird die aktuellste Version des [JP-HB-Devices Addon](https://github.com/jp112sdl/JP-HB-Devices-addon/releases/latest) benötigt!
 
+<img src=Images/aussen.jpg width=300></img><br/>
+_Der erste Prototyp_
+
 #### Bauteile
 - Batteriehalter für 3 oder 4 Batterien
 - Ultraschallsensor:
@@ -24,3 +27,9 @@ Um die Geräteunterstützung zu aktivieren, wird die aktuellste Version des [JP-
 
 #### CCU Geräteeinstellungen
 ![ccu_setting](Images/CCU_Einstellungen.png)
+
+
+#### Halterung / Aufhängung
+<img src=Images/halter1.jpg width=300></img>
+<img src=Images/halter2.jpg width=300></img>
+<img src=Images/halter3.jpg width=300></img>
