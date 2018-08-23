@@ -28,6 +28,8 @@ _Der erste Prototyp_
 #### CCU Geräteeinstellungen
 ![ccu_setting](Images/CCU_Einstellungen.png)
 
+#### CCU Anzeige der Werte
+![ccu_setting](Images/CCU_Bedienung.png)
 
 #### Halterung / Aufhängung
 <img src=Images/halter2.jpg width=300></img>
