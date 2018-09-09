@@ -234,17 +234,17 @@ class MeasureChannel : public Channel<Hal, UList1, EmptyList, List4, PEERS_PER_C
 
     void configChanged() {
       DPRINTLN(F("Config changed List1"));
-      DPRINT(F("*CASE_HIGH: "));
+      DPRINT(F("*CASE_HIGH:       "));
       DDECLN(this->getList1().caseHigh());
-      DPRINT(F("*CASE_WIDTH: "));
+      DPRINT(F("*CASE_WIDTH:      "));
       DDECLN(this->getList1().caseWidth());
-      DPRINT(F("*CASE_LENGTH: "));
+      DPRINT(F("*CASE_LENGTH:     "));
       DDECLN(this->getList1().caseLength());
-      DPRINT(F("*CASE_DESIGN: "));
+      DPRINT(F("*CASE_DESIGN:     "));
       DDECLN(this->getList1().caseDesign());
       DPRINT(F("*DISTANCE_OFFSET: "));
       DDECLN(this->getList1().distanceOffset());
-      DPRINT(F("*SENSOR_TYPE: "));
+      DPRINT(F("*SENSOR_TYPE:     "));
       DDECLN(this->getList1().sensorType());
     }
 
