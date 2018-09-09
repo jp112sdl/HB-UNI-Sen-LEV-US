@@ -34,6 +34,7 @@ using namespace as;
 
 //Korrekturfaktor der Clock-Ungenauigkeit, wenn keine RTC verwendet wird
 #define SYSCLOCK_FACTOR    0.88
+#define MAX_MEASURE_COUNT  5
 
 enum UltrasonicSensorTypes {
   JSN_SR04T,
@@ -159,15 +160,42 @@ class MeasureChannel : public Channel<Hal, UList1, EmptyList, List4, PEERS_PER_C
           digitalWrite(SENSOR_TRIG_PIN, HIGH);
           delayMicroseconds(10);
           digitalWrite(SENSOR_TRIG_PIN, LOW);
+
+          //m_value = pulseIn(SENSOR_ECHO_PIN, HIGH, 26000);
+          //m_value = (m_value * 1000L / 57874L);
+
+          //long duration = pulseIn(SENSOR_ECHO_PIN, HIGH);
+          //uint32_t distance = (duration * 1000L / 58280);
+          //DPRINT("DIST UNCOMP = "); DDECLN(distance);
+          //uint32_t speedOfSound = 3313 + (606 * temp) / 1000L;
+          //compensatedDistance += ((duration * 100000L / 20000) * speedOfSound) / 1000000;
+          //DPRINT("DIST   COMP = "); DDECLN(compensatedDistance);
+          //m_value = compensatedDistance / 10;//(duration * 1000L / 58280);
+
+
           m_value = pulseIn(SENSOR_ECHO_PIN, HIGH, 26000);
           m_value = (m_value * 1000L / 57874L);
           digitalWrite(SENSOR_EN_PIN, LOW);
           break;
         case MAXSONAR:
           digitalWrite(SENSOR_EN_PIN, HIGH);
-          _delay_ms(200);
-          m_value = pulseIn(SENSOR_ECHO_PIN, HIGH);
-          m_value = (m_value * 1000L / 57874L);
+          _delay_ms(300);
+
+          uint16_t temp = pulseIn(SENSOR_ECHO_PIN, HIGH);
+          _delay_ms(100);
+          uint8_t validcnt = 0;
+          for (uint8_t i = 0; i < MAX_MEASURE_COUNT; i++) {
+            uint16_t p =  pulseIn(SENSOR_ECHO_PIN, HIGH);
+            if (p < 35750) {
+              m_value += p;
+              validcnt++;
+            } else {
+              DPRINTLN("Invalid range detected!");
+            }
+            _delay_ms(100);
+          }
+          
+          m_value = (validcnt > 0) ? (m_value * 1000L / (validcnt * 57874L)) : 0;
           digitalWrite(SENSOR_EN_PIN, LOW);
           break;
         default:
