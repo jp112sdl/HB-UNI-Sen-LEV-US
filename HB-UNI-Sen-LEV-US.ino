@@ -123,7 +123,7 @@ class MeasureEventMsg : public Message {
   public:
     void init(uint8_t msgcnt, uint8_t percent, uint32_t liter, uint8_t volt) {
       Message::init(0x0f, msgcnt, 0x53, (msgcnt % 20 == 1) ? BIDI : BCAST , percent & 0xff, volt & 0xff);
-      pload[0] = (liter >>  32) & 0xff;
+      pload[0] = (liter >>  24) & 0xff;
       pload[1] = (liter >>  16) & 0xff;
       pload[2] = (liter >>  8) & 0xff;
       pload[3] = liter & 0xff;
@@ -150,7 +150,9 @@ class MeasureChannel : public Channel<Hal, UList1, EmptyList, List4, PEERS_PER_C
       uint32_t distanceOffset = this->getList1().distanceOffset();
 
       uint32_t m_value = 0;
-
+      uint8_t validcnt = 0;
+      uint16_t temp = 0;
+      
       switch (this->getList1().sensorType()) {
         case JSN_SR04T:
           digitalWrite(SENSOR_EN_PIN, HIGH);
@@ -181,9 +183,8 @@ class MeasureChannel : public Channel<Hal, UList1, EmptyList, List4, PEERS_PER_C
           digitalWrite(SENSOR_EN_PIN, HIGH);
           _delay_ms(300);
 
-          uint16_t temp = pulseIn(SENSOR_ECHO_PIN, HIGH);
+          temp = pulseIn(SENSOR_ECHO_PIN, HIGH);
           _delay_ms(100);
-          uint8_t validcnt = 0;
           for (uint8_t i = 0; i < MAX_MEASURE_COUNT; i++) {
             uint16_t p =  pulseIn(SENSOR_ECHO_PIN, HIGH);
             if (p < 35750) {
@@ -194,7 +195,7 @@ class MeasureChannel : public Channel<Hal, UList1, EmptyList, List4, PEERS_PER_C
             }
             _delay_ms(100);
           }
-          
+
           m_value = (validcnt > 0) ? (m_value * 1000L / (validcnt * 57874L)) : 0;
           digitalWrite(SENSOR_EN_PIN, LOW);
           break;
