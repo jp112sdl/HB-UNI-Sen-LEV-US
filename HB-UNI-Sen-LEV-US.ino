@@ -315,7 +315,7 @@ ConfigButton<UType> cfgBtn(sdev);
 
 void setup () {
   DINIT(57600, ASKSIN_PLUS_PLUS_IDENTIFIER);
-  printDeviceInfo();
+  //printDeviceInfo();
   sdev.init(hal);
   buttonISR(cfgBtn, CONFIG_BUTTON_PIN);
   sdev.initDone();
