@@ -223,7 +223,7 @@ class MeasureChannel : public Channel<Hal, UList1, EmptyList, List4, PEERS_PER_C
           fillingLiter = (PI * pow((caseWidth >> 1), 2) * fillingHeight) / 1000L;
           break;
         case 1:
-          caseVolume = (PI * pow((caseWidth >> 1), 2) * caseHeight) / 1000L;
+          caseVolume = (PI * pow((caseHeight >> 1), 2) * caseWidth) / 1000L;
           //fillingLiter = pow(caseHeight >> 1, 2) * caseWidth * (acos((caseHeight >> 1 - fillingHeight) / caseHeight >> 1) - (caseHeight >> 1 - fillingHeight) * (sqrt((2 * caseHeight >> 1 * fillingHeight) - pow(fillingHeight, 2)) / pow(caseHeight >> 1, 2)))  ;
           r = caseHeight  / 2;
           fillingLiter = (r * r * 2 * acos(1 - fillingHeight / r) / 2 - 2 * sqrt(caseHeight * fillingHeight - fillingHeight * fillingHeight) * (r - fillingHeight) / 2) * caseWidth / 1000L;
