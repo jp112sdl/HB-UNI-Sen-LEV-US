@@ -315,9 +315,9 @@ ConfigButton<UType> cfgBtn(sdev);
 
 void setup () {
   DINIT(57600, ASKSIN_PLUS_PLUS_IDENTIFIER);
-  //printDeviceInfo();
   sdev.init(hal);
   buttonISR(cfgBtn, CONFIG_BUTTON_PIN);
+  DDEVINFO(sdev);
   sdev.initDone();
 }
 
@@ -329,18 +329,5 @@ void loop() {
   }
 }
 
-void printDeviceInfo() {
-  HMID ids;
-  sdev.getDeviceID(ids);
-
-  uint8_t ser[10];
-  sdev.getDeviceSerial(ser);
-
-  DPRINT(F("Device Info: "));
-  for (int i = 0; i < 10; i++) {
-    DPRINT(char(ser[i]));
-  }
-  DPRINT(" ("); DHEX(ids); DPRINTLN(")");
-}
 
 
