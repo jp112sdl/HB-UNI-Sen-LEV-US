@@ -152,7 +152,7 @@ class MeasureChannel : public Channel<Hal, UList1, EmptyList, List4, PEERS_PER_C
       uint32_t m_value = 0;
       uint8_t validcnt = 0;
       uint16_t temp = 0;
-      
+
       switch (this->getList1().sensorType()) {
         case JSN_SR04T:
           digitalWrite(SENSOR_EN_PIN, HIGH);
@@ -325,6 +325,9 @@ void loop() {
   bool worked = hal.runready();
   bool poll = sdev.pollRadio();
   if ( worked == false && poll == false ) {
+    if ( hal.battery.critical() ) {
+      hal.activity.sleepForever(hal);
+    }
     hal.activity.savePower<Sleep<>>(hal);
   }
 }
