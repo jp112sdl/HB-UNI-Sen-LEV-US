@@ -37,7 +37,7 @@ using namespace as;
 #define MAX_MEASURE_COUNT  5
 
 enum UltrasonicSensorTypes {
-  JSN_SR04T,
+  JSN_SR04T_US100,
   MAXSONAR
 };
 
@@ -152,11 +152,11 @@ class MeasureChannel : public Channel<Hal, UList1, EmptyList, List4, PEERS_PER_C
       uint32_t m_value = 0;
       uint8_t validcnt = 0;
       uint16_t temp = 0;
-
+      digitalWrite(SENSOR_EN_PIN, HIGH);
+      _delay_ms(300);
       switch (this->getList1().sensorType()) {
-        case JSN_SR04T:
-          digitalWrite(SENSOR_EN_PIN, HIGH);
-          _delay_ms(250);
+        case JSN_SR04T_US100:
+
           digitalWrite(SENSOR_TRIG_PIN, LOW);
           delayMicroseconds(2);
           digitalWrite(SENSOR_TRIG_PIN, HIGH);
@@ -174,15 +174,10 @@ class MeasureChannel : public Channel<Hal, UList1, EmptyList, List4, PEERS_PER_C
           //DPRINT("DIST   COMP = "); DDECLN(compensatedDistance);
           //m_value = compensatedDistance / 10;//(duration * 1000L / 58280);
 
-
-          m_value = pulseIn(SENSOR_ECHO_PIN, HIGH, 26000);
+          m_value = pulseIn(SENSOR_ECHO_PIN, HIGH);
           m_value = (m_value * 1000L / 57874L);
-          digitalWrite(SENSOR_EN_PIN, LOW);
           break;
         case MAXSONAR:
-          digitalWrite(SENSOR_EN_PIN, HIGH);
-          _delay_ms(300);
-
           temp = pulseIn(SENSOR_ECHO_PIN, HIGH);
           _delay_ms(100);
           for (uint8_t i = 0; i < MAX_MEASURE_COUNT; i++) {
@@ -197,13 +192,13 @@ class MeasureChannel : public Channel<Hal, UList1, EmptyList, List4, PEERS_PER_C
           }
 
           m_value = (validcnt > 0) ? (m_value * 1000L / (validcnt * 57874L)) : 0;
-          digitalWrite(SENSOR_EN_PIN, LOW);
           break;
         default:
           DPRINTLN(F("Invalid Sensor Type selected"));
           break;
       }
 
+      digitalWrite(SENSOR_EN_PIN, LOW);
 
       //m_value = 115 ;
 
