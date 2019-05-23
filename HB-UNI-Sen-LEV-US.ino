@@ -122,7 +122,7 @@ class UList1 : public RegList1<UReg1> {
 class MeasureEventMsg : public Message {
   public:
     void init(uint8_t msgcnt, uint8_t percent, uint32_t liter, uint8_t volt) {
-      Message::init(0x0f, msgcnt, 0x53, (msgcnt % 20 == 1) ? BIDI : BCAST , percent & 0xff, volt & 0xff);
+      Message::init(0x0f, msgcnt, 0x53, (msgcnt % 20 == 1) ? (BIDI | WKMEUP) : BCAST , percent & 0xff, volt & 0xff);
       pload[0] = (liter >>  24) & 0xff;
       pload[1] = (liter >>  16) & 0xff;
       pload[2] = (liter >>  8) & 0xff;
