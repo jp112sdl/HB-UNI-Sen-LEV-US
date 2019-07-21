@@ -122,7 +122,7 @@ class UList1 : public RegList1<UReg1> {
 class MeasureEventMsg : public Message {
   public:
     void init(uint8_t msgcnt, uint8_t percent, uint32_t liter, uint8_t volt) {
-      Message::init(0x0f, msgcnt, 0x53, (msgcnt % 20 == 1) ? (BIDI | WKMEUP) : BCAST , percent & 0xff, volt & 0xff);
+      Message::init(0x0f, msgcnt, 0x53, BIDI | WKMEUP, percent & 0xff, volt & 0xff);
       pload[0] = (liter >>  24) & 0xff;
       pload[1] = (liter >>  16) & 0xff;
       pload[2] = (liter >>  8) & 0xff;
@@ -238,14 +238,15 @@ class MeasureChannel : public Channel<Hal, UList1, EmptyList, List4, PEERS_PER_C
       DPRINTLN("");
     }
     virtual void trigger (__attribute__ ((unused)) AlarmClock & clock) {
+      uint8_t msgcnt = device().nextcount();
       if (last_flags != flags()) {
         this->changed(true);
         last_flags = flags();
       }
       measure();
       tick = delay();
-      msg.init(device().nextcount(), fillingPercent, fillingLiter, device().battery().current());
-      device().sendPeerEvent(msg, *this);
+      msg.init(msgcnt, fillingPercent, fillingLiter, device().battery().current());
+      if (msgcnt % 20 == 1) device().sendPeerEvent(msg, *this); else device().broadcastEvent(msg, *this);
       sysclock.add(*this);
     }
 
