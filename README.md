@@ -11,6 +11,7 @@ _Der erste Prototyp_
 - Ultraschallsensor:
   - z.B. [JSN-SR04T V2.0](https://de.aliexpress.com/item/Integrated-Ultrasonic-Module-Distance-Measuring-Sensor-Module-Reversing-Radar-Waterproof/32312190912.html)
     - **Hinweis:** Unbedingt die **V2.0** nehmen, weil diese auch mit 3.3V zuverlässig arbeitet!
+  - oder [US-100](https://eckstein-shop.de/Adafruit-US-100-Ultrasonic-Distance-Sensor-3V-or-5V-Logic)  
   - oder MaxBotix [MaxSonar MB1040, LV-MaxSonar-EZ4](https://de.aliexpress.com/item/NEW-Mini-uav-obstacle-avoidance-ultrasonic-ranging-module-MB1040-High-Performance-Sonar-Range-Finder/32862912642.html)
   
 - [CC1101 (868MHz)](https://de.aliexpress.com/item/CC1101-Wireless-Module-Long-Distance-Transmission-Antenna-868MHZ-M115-For-FSK-GFSK-ASK-OOK-MSK-64/32635393463.html) 
@@ -27,6 +28,8 @@ _Der erste Prototyp_
 
 #### CCU Geräteeinstellungen
 ![ccu_setting](Images/CCU_Einstellungen.png)
+
+Bei Verwendung des **US-100** ist der **JSN-SR04T** auszuwählen
 
 #### CCU Anzeige der Werte
 ![ccu_setting](Images/CCU_Bedienung.png)
