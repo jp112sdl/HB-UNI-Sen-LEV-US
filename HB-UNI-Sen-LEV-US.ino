@@ -2,6 +2,7 @@
 // AskSin++
 // 2016-10-31 papa Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
 // 2018-04-16 jp112sdl Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
+// 2020-03-12 Wolfram Winter Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
 //- -----------------------------------------------------------------------------------------------------------------------
 
 // define this to read the device id, serial and device type from bootloader section
@@ -46,7 +47,7 @@ const struct DeviceInfo PROGMEM devinfo = {
   {0xF9, 0xD2, 0x01},          // Device ID
   "JPLEV00001",                // Device Serial
   {0xF9, 0xD2},                // Device Model
-  0x10,                        // Firmware Version
+  0x11,                        // Firmware Version
   0x53,                        // Device Type
   {0x01, 0x01}                 // Info Bytes
 };
@@ -121,12 +122,15 @@ class UList1 : public RegList1<UReg1> {
 
 class MeasureEventMsg : public Message {
   public:
-    void init(uint8_t msgcnt, uint8_t percent, uint32_t liter, uint8_t volt) {
-      Message::init(0x0f, msgcnt, 0x53, BIDI | WKMEUP, percent & 0xff, volt & 0xff);
+    void init(uint8_t msgcnt, uint8_t percent, uint32_t liter, uint16_t height, uint8_t volt) {
+      // Message Length (first byte param.): 11 + payload = 17 = 0x11
+      Message::init(0x11, msgcnt, 0x53, BIDI | WKMEUP, percent & 0xff, volt & 0xff);
       pload[0] = (liter >>  24) & 0xff;
       pload[1] = (liter >>  16) & 0xff;
       pload[2] = (liter >>  8) & 0xff;
       pload[3] = liter & 0xff;
+      pload[4] = (height >> 8) & 0xff;
+      pload[5] = height & 0xff;
     }
 };
 
@@ -134,12 +138,13 @@ class MeasureChannel : public Channel<Hal, UList1, EmptyList, List4, PEERS_PER_C
     MeasureEventMsg msg;
     uint8_t  fillingPercent;
     uint32_t fillingLiter;
+    uint16_t fillingHeight;
     uint16_t distance;
 
     uint8_t last_flags = 0xff;
 
   public:
-    MeasureChannel () : Channel(), Alarm(0), fillingLiter(0), fillingPercent(0)  {}
+    MeasureChannel () : Channel(), Alarm(0), fillingLiter(0), fillingPercent(0), fillingHeight(0)  {}
     virtual ~MeasureChannel () {}
 
     void measure() {
@@ -152,6 +157,9 @@ class MeasureChannel : public Channel<Hal, UList1, EmptyList, List4, PEERS_PER_C
       uint32_t m_value = 0;
       uint8_t validcnt = 0;
       uint16_t temp = 0;
+
+      pinMode(SENSOR_ECHO_PIN, INPUT_PULLUP);
+      _delay_ms(300);
       digitalWrite(SENSOR_EN_PIN, HIGH);
       _delay_ms(300);
       switch (this->getList1().sensorType()) {
@@ -199,6 +207,7 @@ class MeasureChannel : public Channel<Hal, UList1, EmptyList, List4, PEERS_PER_C
       }
 
       digitalWrite(SENSOR_EN_PIN, LOW);
+      pinMode(SENSOR_ECHO_PIN, INPUT);
 
       //m_value = 115 ;
 
@@ -208,7 +217,7 @@ class MeasureChannel : public Channel<Hal, UList1, EmptyList, List4, PEERS_PER_C
       DPRINT(F("Abstand abzgl. OFFSET    : ")); DDECLN(distance);
 
       DPRINT(F("Behaelterhoehe           : ")); DDECLN(caseHeight);
-      uint32_t fillingHeight = (distance > caseHeight) ? 0 : caseHeight - distance;
+      fillingHeight = (distance > caseHeight) ? 0 : caseHeight - distance;
       DPRINT(F("Fuellhoehe               : ")); DDECLN(fillingHeight);
 
       uint32_t caseVolume; float r;
@@ -245,7 +254,7 @@ class MeasureChannel : public Channel<Hal, UList1, EmptyList, List4, PEERS_PER_C
       }
       measure();
       tick = delay();
-      msg.init(msgcnt, fillingPercent, fillingLiter, device().battery().current());
+      msg.init(msgcnt, fillingPercent, fillingLiter, fillingHeight, device().battery().current());
       if (msgcnt % 20 == 1) device().sendPeerEvent(msg, *this); else device().broadcastEvent(msg, *this);
       sysclock.add(*this);
     }
@@ -275,7 +284,8 @@ class MeasureChannel : public Channel<Hal, UList1, EmptyList, List4, PEERS_PER_C
 
     void setup(Device<Hal, UList0>* dev, uint8_t number, uint16_t addr) {
       Channel::setup(dev, number, addr);
-      pinMode(SENSOR_ECHO_PIN, INPUT_PULLUP);
+      // pinMode(SENSOR_ECHO_PIN, INPUT_PULLUP);
+      pinMode(SENSOR_ECHO_PIN, INPUT);
       pinMode(SENSOR_TRIG_PIN, OUTPUT);
       pinMode(SENSOR_EN_PIN, OUTPUT);
       sysclock.add(*this);
@@ -327,6 +337,3 @@ void loop() {
     hal.activity.savePower<Sleep<>>(hal);
   }
 }
-
-
-
