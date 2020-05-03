@@ -61,8 +61,8 @@ class Hal : public BaseHal {
     void init (const HMID& id) {
       BaseHal::init(id);
       battery.init(seconds2ticks(60UL * 60) * SYSCLOCK_FACTOR, sysclock); //battery measure once an hour
-      battery.low(22);
-      battery.critical(19);
+      battery.low(24);
+      battery.critical(22);
     }
 
     bool runready () {
