@@ -8,6 +8,9 @@
 // define this to read the device id, serial and device type from bootloader section
 // #define USE_OTA_BOOTLOADER
 
+#define USE_TEMPERATURE_COMPENSATION // connect DS18B20 Sensor to Pin 9
+#define SENSOR_ONLY
+
 #define EI_NOTEXTERNAL
 #include <EnableInterrupt.h>
 #include <AskSinPP.h>
@@ -15,6 +18,10 @@
 
 #include <Register.h>
 #include <MultiChannelDevice.h>
+#ifdef USE_TEMPERATURE_COMPENSATION
+#include <OneWire.h>
+#include <sensors/Ds18b20.h>
+#endif
 
 // Arduino Pro mini 8 Mhz
 // Arduino pin for the config button
@@ -26,6 +33,12 @@
 #define SENSOR_TRIG_PIN    14 //A0
 #define BATT_EN_PIN        15
 #define BATT_SENS_PIN      17
+#define DS18B20_PIN        9
+
+#ifdef USE_TEMPERATURE_COMPENSATION
+//DS18B20 Sensors connected to pin
+OneWire oneWire(DS18B20_PIN);
+#endif
 
 // number of available peers per channel
 #define PEERS_PER_CHANNEL 2
@@ -47,7 +60,11 @@ const struct DeviceInfo PROGMEM devinfo = {
   {0xF9, 0xD2, 0x01},          // Device ID
   "JPLEV00001",                // Device Serial
   {0xF9, 0xD2},                // Device Model
-  0x11,                        // Firmware Version
+#ifdef USE_TEMPERATURE_COMPENSATION
+  0x12,                        // Firmware Version
+#else
+  0x11,
+#endif
   0x53,                        // Device Type
   {0x01, 0x01}                 // Info Bytes
 };
@@ -61,8 +78,8 @@ class Hal : public BaseHal {
     void init (const HMID& id) {
       BaseHal::init(id);
       battery.init(seconds2ticks(60UL * 60) * SYSCLOCK_FACTOR, sysclock); //battery measure once an hour
-      battery.low(24);
-      battery.critical(22);
+      battery.low(22);
+      battery.critical(20);
     }
 
     bool runready () {
@@ -122,15 +139,24 @@ class UList1 : public RegList1<UReg1> {
 
 class MeasureEventMsg : public Message {
   public:
-    void init(uint8_t msgcnt, uint8_t percent, uint32_t liter, uint16_t height, uint8_t volt) {
+    void init(uint8_t msgcnt, uint8_t percent, uint32_t liter, uint16_t height, uint8_t volt, int16_t temp) {
       // Message Length (first byte param.): 11 + payload = 17 = 0x11
-      Message::init(0x11, msgcnt, 0x53, BIDI | WKMEUP, percent & 0xff, volt & 0xff);
+      uint8_t msg_len = 0x11;
+#ifdef USE_TEMPERATURE_COMPENSATION
+      msg_len += 0x03; // three extra bytes for the temperature channel
+#endif
+      Message::init(0x14, msgcnt, 0x53, BIDI | WKMEUP, percent & 0xff, volt & 0xff);
       pload[0] = (liter >>  24) & 0xff;
       pload[1] = (liter >>  16) & 0xff;
       pload[2] = (liter >>  8) & 0xff;
       pload[3] = liter & 0xff;
       pload[4] = (height >> 8) & 0xff;
       pload[5] = height & 0xff;
+#ifdef USE_TEMPERATURE_COMPENSATION
+      pload[6] = 0x42;
+      pload[7] = (temp >> 8) & 0xff;
+      pload[8] = temp & 0xff;
+#endif
     }
 };
 
@@ -140,11 +166,17 @@ class MeasureChannel : public Channel<Hal, UList1, EmptyList, List4, PEERS_PER_C
     uint32_t fillingLiter;
     uint16_t fillingHeight;
     uint16_t distance;
+    int16_t temperature;
+    uint8_t sensorCount;
 
     uint8_t last_flags = 0xff;
 
+#ifdef USE_TEMPERATURE_COMPENSATION
+    Ds18b20 tempSensors[1];
+#endif
+
   public:
-    MeasureChannel () : Channel(), Alarm(0), fillingLiter(0), fillingPercent(0), fillingHeight(0)  {}
+    MeasureChannel () : Channel(), Alarm(0), fillingPercent(0), fillingLiter(0), fillingHeight(0), distance(0), temperature(-600), sensorCount(0) {}
     virtual ~MeasureChannel () {}
 
     void measure() {
@@ -155,8 +187,9 @@ class MeasureChannel : public Channel<Hal, UList1, EmptyList, List4, PEERS_PER_C
       uint32_t distanceOffset = this->getList1().distanceOffset();
 
       uint32_t m_value = 0;
+      uint32_t duration = 0;
       uint8_t validcnt = 0;
-      uint16_t temp = 0;
+
 
       pinMode(SENSOR_ECHO_PIN, INPUT_PULLUP);
       _delay_ms(300);
@@ -164,34 +197,26 @@ class MeasureChannel : public Channel<Hal, UList1, EmptyList, List4, PEERS_PER_C
       _delay_ms(300);
       switch (this->getList1().sensorType()) {
         case JSN_SR04T_US100:
-
+        {
           digitalWrite(SENSOR_TRIG_PIN, LOW);
           delayMicroseconds(2);
           digitalWrite(SENSOR_TRIG_PIN, HIGH);
           delayMicroseconds(10);
           digitalWrite(SENSOR_TRIG_PIN, LOW);
 
-          //m_value = pulseIn(SENSOR_ECHO_PIN, HIGH, 26000);
-          //m_value = (m_value * 1000L / 57874L);
+          duration = pulseIn(SENSOR_ECHO_PIN, HIGH);
 
-          //long duration = pulseIn(SENSOR_ECHO_PIN, HIGH);
-          //uint32_t distance = (duration * 1000L / 58280);
-          //DPRINT("DIST UNCOMP = "); DDECLN(distance);
-          //uint32_t speedOfSound = 3313 + (606 * temp) / 1000L;
-          //compensatedDistance += ((duration * 100000L / 20000) * speedOfSound) / 1000000;
-          //DPRINT("DIST   COMP = "); DDECLN(compensatedDistance);
-          //m_value = compensatedDistance / 10;//(duration * 1000L / 58280);
-
-          m_value = pulseIn(SENSOR_ECHO_PIN, HIGH);
-          m_value = (m_value * 1000L / 57874L);
+          validcnt++;
+        }
           break;
         case MAXSONAR:
-          temp = pulseIn(SENSOR_ECHO_PIN, HIGH);
+        {
+          pulseIn(SENSOR_ECHO_PIN, HIGH);
           _delay_ms(100);
           for (uint8_t i = 0; i < MAX_MEASURE_COUNT; i++) {
             uint16_t p =  pulseIn(SENSOR_ECHO_PIN, HIGH);
             if (p < 35750) {
-              m_value += p;
+              duration += p;
               validcnt++;
             } else {
               DPRINTLN("Invalid range detected!");
@@ -199,7 +224,7 @@ class MeasureChannel : public Channel<Hal, UList1, EmptyList, List4, PEERS_PER_C
             _delay_ms(100);
           }
 
-          m_value = (validcnt > 0) ? (m_value * 1000L / (validcnt * 57874L)) : 0;
+        }
           break;
         default:
           DPRINTLN(F("Invalid Sensor Type selected"));
@@ -209,8 +234,22 @@ class MeasureChannel : public Channel<Hal, UList1, EmptyList, List4, PEERS_PER_C
       digitalWrite(SENSOR_EN_PIN, LOW);
       pinMode(SENSOR_ECHO_PIN, INPUT);
 
-      //m_value = 115 ;
+      duration = (validcnt > 0) ? duration / validcnt : 0;
 
+      m_value = (duration * 1000L / 57874L);
+
+      DPRINT("DIST UNCOMP = "); DDECLN(m_value);
+#ifdef USE_TEMPERATURE_COMPENSATION
+      if (sensorCount > 0) {
+        Ds18b20::measure(tempSensors, sensorCount);
+        temperature = tempSensors[0].temperature();
+        DPRINT("TEMPERATURE = ");DDECLN(temperature);
+        uint32_t speedOfSound = 3313L + (606L * temperature) / 1000L;
+        uint32_t compensatedDistance = ((duration * 100000L / 20000) * speedOfSound) / 1000000L;
+        DPRINT("DIST   COMP = "); DDECLN(compensatedDistance);
+        m_value = compensatedDistance;
+      }
+#endif
       DPRINTLN("");
       DPRINT(F("Abstand gemessen         : ")); DDECLN(m_value);
       distance = (distanceOffset > m_value) ? 0 :  m_value - distanceOffset;
@@ -220,7 +259,7 @@ class MeasureChannel : public Channel<Hal, UList1, EmptyList, List4, PEERS_PER_C
       fillingHeight = (distance > caseHeight) ? 0 : caseHeight - distance;
       DPRINT(F("Fuellhoehe               : ")); DDECLN(fillingHeight);
 
-      uint32_t caseVolume; float r;
+      uint32_t caseVolume = 0; float r = 0;
       switch (caseDesign) {
         case 0:
           caseVolume = (PI * pow((caseWidth >> 1), 2) * caseHeight) / 1000L;
@@ -254,8 +293,8 @@ class MeasureChannel : public Channel<Hal, UList1, EmptyList, List4, PEERS_PER_C
       }
       measure();
       tick = delay();
-      msg.init(msgcnt, fillingPercent, fillingLiter, fillingHeight, device().battery().current());
-      if (msgcnt % 20 == 1) device().sendPeerEvent(msg, *this); else device().broadcastEvent(msg, *this);
+      msg.init(msgcnt, fillingPercent, fillingLiter, fillingHeight, device().battery().current(), temperature);
+      if (msgcnt % 20 == 1) device().sendPeerEvent(msg, *this); else device().broadcastEvent(msg);
       sysclock.add(*this);
     }
 
@@ -288,6 +327,11 @@ class MeasureChannel : public Channel<Hal, UList1, EmptyList, List4, PEERS_PER_C
       pinMode(SENSOR_ECHO_PIN, INPUT);
       pinMode(SENSOR_TRIG_PIN, OUTPUT);
       pinMode(SENSOR_EN_PIN, OUTPUT);
+
+#ifdef USE_TEMPERATURE_COMPENSATION
+      sensorCount = Ds18b20::init(oneWire, tempSensors, 1);
+      DPRINT("Found "); DDEC(sensorCount); DPRINTLN(" DS18B20 Sensor(s)");
+#endif
       sysclock.add(*this);
     }
 
@@ -296,7 +340,13 @@ class MeasureChannel : public Channel<Hal, UList1, EmptyList, List4, PEERS_PER_C
     }
 
     uint8_t flags () const {
-      uint8_t flags = this->device().battery().low() ? 0x80 : 0x00;
+      uint8_t flags = 0x00;
+
+#ifdef USE_TEMPERATURE_COMPENSATION
+      if (sensorCount == 0) flags = 0x01 << 1;
+#endif
+
+      flags |= this->device().battery().low() ? 0x80 : 0x00;
       return flags;
     }
 };
