@@ -24,6 +24,9 @@ _Der erste Prototyp_
 #### Verdrahtung
 ![wiring](Images/wiring.png)
 
+**oder mit Temperaturkompensation:**
+![wiring_w_temp](Images/wiring_w_temp.png)
+
 **Bei Verwendung des MaxSonar Sensors ist der PW-Pin an den SENSOR_ECHO_PIN anzuschließen. Der SENSOR_TRIG_PIN wird nicht verwendet.**
 
 #### CCU Geräteeinstellungen
