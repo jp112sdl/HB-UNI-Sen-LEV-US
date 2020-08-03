@@ -145,7 +145,7 @@ class MeasureEventMsg : public Message {
 #ifdef USE_TEMPERATURE_COMPENSATION
       msg_len += 0x03; // three extra bytes for the temperature channel
 #endif
-      Message::init(0x14, msgcnt, 0x53, BIDI | WKMEUP, percent & 0xff, volt & 0xff);
+      Message::init(msg_len, msgcnt, 0x53, BIDI | WKMEUP, percent & 0xff, volt & 0xff);
       pload[0] = (liter >>  24) & 0xff;
       pload[1] = (liter >>  16) & 0xff;
       pload[2] = (liter >>  8) & 0xff;
